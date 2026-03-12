@@ -1,13 +1,60 @@
 import { getStep, getAdjacentSteps } from '@/lib/steps';
+import { highlight } from '@/lib/highlight';
 import { StepHeader } from '@/components/StepHeader';
 import { StepNavigation } from '@/components/StepNavigation';
+import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
 import { DashboardCallout } from '@/components/DashboardCallout';
 import { SecurityNote } from '@/components/SecurityNote';
 import { InfoBox } from '@/components/InfoBox';
 
-export default function RolesAndAccessPage() {
+export default async function RolesAndAccessPage() {
   const step = getStep('roles-and-access')!;
   const { prev, next } = getAdjacentSteps('roles-and-access');
+
+  const testbankCurl = `curl -X POST 'https://api.atlar.com/v1/testbank/transactions' \\
+  -u '<YOUR_ACCESS_KEY>:<YOUR_SECRET>' \\
+  -H 'X-Testbank-Authorization: Basic dXNlcjM6cGFzczM=' \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "accountId": "<YOUR_ACCOUNT_ID>",
+    "date": "2025-12-01",
+    "valueDate": "2025-12-01",
+    "amount": {
+      "currency": "EUR",
+      "value": 1500
+    },
+    "remittanceInformation": {
+      "type": "UNSTRUCTURED",
+      "value": "Test deposit of EUR 15"
+    }
+  }'`;
+
+  const testbankPython = `import requests
+
+url = "https://api.atlar.com/v1/testbank/transactions"
+headers = {
+    "X-Testbank-Authorization": "Basic dXNlcjM6cGFzczM=",
+    "Content-Type": "application/json",
+}
+payload = {
+    "accountId": "<YOUR_ACCOUNT_ID>",
+    "date": "2025-12-01",
+    "valueDate": "2025-12-01",
+    "amount": {"currency": "EUR", "value": 1500},
+    "remittanceInformation": {
+        "type": "UNSTRUCTURED",
+        "value": "Test deposit of EUR 15",
+    },
+}
+
+resp = requests.post(url, json=payload, headers=headers,
+                     auth=("<YOUR_ACCESS_KEY>", "<YOUR_SECRET>"))
+print(resp.json())`;
+
+  const testbankTabs: CodeTab[] = [
+    { label: 'curl', lang: 'bash', code: testbankCurl, highlightedHtml: await highlight(testbankCurl, 'bash') },
+    { label: 'Python', lang: 'python', code: testbankPython, highlightedHtml: await highlight(testbankPython, 'python') },
+  ];
 
   return (
     <>
@@ -89,6 +136,34 @@ ATLAR_SECRET=your_secret_here`}
             The Python examples in this guide use <code>python-dotenv</code> to load
             credentials from an <code>AtlarCreds.env</code> file. Install it
             with <code>pip install python-dotenv</code>.
+          </p>
+        </InfoBox>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="mb-4 text-2xl font-bold">Try it: simulate a Testbank transaction</h2>
+        <p className="mb-4 text-[var(--color-text-secondary)]">
+          Now that you have API credentials, you can create synthetic transactions on
+          Testbank accounts via the API. These appear in Atlar after the next sync
+          (either the hourly cron job or clicking <strong>Refresh</strong> in the
+          Dashboard). Use negative amounts for expenses.
+        </p>
+
+        <InfoBox variant="info" title="Replace placeholders before running">
+          <p>
+            Replace <code>&lt;YOUR_ACCESS_KEY&gt;</code> and <code>&lt;YOUR_SECRET&gt;</code> with
+            the credentials you just created above.
+            Replace <code>&lt;YOUR_ACCOUNT_ID&gt;</code> with a Testbank account ID from your Dashboard.
+          </p>
+        </InfoBox>
+
+        <CodeBlock tabs={testbankTabs} />
+
+        <InfoBox variant="tip" title="Refreshing data">
+          <p>
+            After creating a Testbank transaction, go to your account in the Dashboard and
+            click the <strong>Refresh</strong> button, or wait for the hourly sync. The
+            transaction will then appear in your account&apos;s transaction list.
           </p>
         </InfoBox>
       </section>
