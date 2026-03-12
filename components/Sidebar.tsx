@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { steps } from '@/lib/steps';
 import { useTheme } from './ThemeProvider';
+import { useCredentials } from '@/lib/credentials';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
+  const { isSet } = useCredentials();
 
   const currentSlug =
     pathname === '/'
@@ -60,6 +62,17 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-[var(--color-border)] p-4">
+        <Link
+          href="/steps/roles-and-access"
+          className={`mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--color-bg-tertiary)] ${
+            isSet
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-[var(--color-text-tertiary)]'
+          }`}
+        >
+          <span className={`h-2 w-2 rounded-full ${isSet ? 'bg-emerald-500' : 'bg-[var(--color-text-tertiary)] opacity-40'}`} />
+          <span>{isSet ? 'Sandbox connected' : 'No credentials'}</span>
+        </Link>
         <button
           onClick={toggle}
           className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-tertiary)]"
