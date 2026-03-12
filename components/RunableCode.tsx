@@ -14,7 +14,12 @@ export type ApiCall = {
 export type ParamField = {
   key: string;
   label: string;
-  placeholder: string;
+  placeholder?: string;
+  defaultValue?: string;
+  type?: 'text' | 'number' | 'date' | 'select';
+  options?: { value: string; label: string }[];
+  required?: boolean;
+  half?: boolean;
 };
 
 type Props = {
@@ -24,9 +29,19 @@ type Props = {
   parameters?: ParamField[];
 };
 
+function getInitialValues(parameters: ParamField[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const p of parameters) {
+    if (p.defaultValue !== undefined) out[p.key] = p.defaultValue;
+  }
+  return out;
+}
+
 export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props) {
   const { credentials, isSet } = useCredentials();
-  const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const [paramValues, setParamValues] = useState<Record<string, string>>(
+    () => getInitialValues(parameters),
+  );
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ status: number; body: unknown } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,14 +50,36 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
     setParamValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  function resolveValue(raw: string): string | number {
+    const field = parameters.find((p) => `{{${p.key}}}` === raw);
+    if (field?.type === 'number') {
+      const n = Number(raw);
+      if (!isNaN(n)) return n;
+    }
+    return raw;
+  }
+
   function substituteParams(obj: unknown): unknown {
     if (typeof obj === 'string') {
+      const allValues: Record<string, string> = {
+        ...paramValues,
+        today: new Date().toISOString().slice(0, 10),
+      };
+
+      const isWholePlaceholder = /^\{\{(\w+)\}\}$/.test(obj);
+      if (isWholePlaceholder) {
+        const key = obj.slice(2, -2);
+        const replaced = allValues[key] ?? obj;
+        return resolveValue(replaced);
+      }
+
       let out = obj;
-      for (const [k, v] of Object.entries(paramValues)) {
+      for (const [k, v] of Object.entries(allValues)) {
         out = out.replace(`{{${k}}}`, v);
       }
       return out;
     }
+    if (typeof obj === 'number') return obj;
     if (Array.isArray(obj)) return obj.map(substituteParams);
     if (obj && typeof obj === 'object') {
       const result: Record<string, unknown> = {};
@@ -54,7 +91,8 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
     return obj;
   }
 
-  const missingParams = parameters.filter((p) => !paramValues[p.key]?.trim());
+  const requiredParams = parameters.filter((p) => p.required !== false);
+  const missingParams = requiredParams.filter((p) => !paramValues[p.key]?.trim());
 
   async function run() {
     if (!credentials || missingParams.length > 0) return;
@@ -99,30 +137,56 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
       ? 'text-emerald-600 dark:text-emerald-400'
       : 'text-red-600 dark:text-red-400';
 
+  const inputClass =
+    'w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-tertiary)] focus:border-atlar-500 focus:outline-none focus:ring-1 focus:ring-atlar-500';
+
   return (
     <div className="space-y-3">
-      {/* Parameter inputs */}
       {parameters.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {parameters.map((p) => (
-            <div key={p.key} className="flex-1" style={{ minWidth: 200 }}>
-              <label
-                htmlFor={`param-${p.key}`}
-                className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]"
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+          <div className="flex flex-wrap gap-3">
+            {parameters.map((p) => (
+              <div
+                key={p.key}
+                className={p.half ? 'w-[calc(50%-6px)] min-w-[140px]' : 'w-full min-w-[200px] flex-1'}
               >
-                {p.label}
-              </label>
-              <input
-                id={`param-${p.key}`}
-                type="text"
-                value={paramValues[p.key] ?? ''}
-                onChange={(e) => setParam(p.key, e.target.value)}
-                placeholder={p.placeholder}
-                autoComplete="off"
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-tertiary)] focus:border-atlar-500 focus:outline-none focus:ring-1 focus:ring-atlar-500"
-              />
-            </div>
-          ))}
+                <label
+                  htmlFor={`param-${p.key}`}
+                  className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]"
+                >
+                  {p.label}
+                  {p.required === false && (
+                    <span className="ml-1 font-normal text-[var(--color-text-tertiary)]">(optional)</span>
+                  )}
+                </label>
+
+                {p.type === 'select' && p.options ? (
+                  <select
+                    id={`param-${p.key}`}
+                    value={paramValues[p.key] ?? ''}
+                    onChange={(e) => setParam(p.key, e.target.value)}
+                    className={inputClass}
+                  >
+                    {p.options.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id={`param-${p.key}`}
+                    type={p.type === 'number' ? 'number' : p.type === 'date' ? 'date' : 'text'}
+                    value={paramValues[p.key] ?? ''}
+                    onChange={(e) => setParam(p.key, e.target.value)}
+                    placeholder={p.placeholder}
+                    autoComplete="off"
+                    className={inputClass}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -174,10 +238,10 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
       )}
 
       {result && (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
           <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-4 py-2">
             <span className="text-xs font-medium text-[var(--color-text-secondary)]">Response</span>
-            <span className={`text-xs font-mono font-semibold ${statusColor}`}>
+            <span className={`font-mono text-xs font-semibold ${statusColor}`}>
               {result.status}
             </span>
           </div>
