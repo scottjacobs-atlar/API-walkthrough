@@ -2,7 +2,9 @@ import { getStep, getAdjacentSteps } from '@/lib/steps';
 import { highlight } from '@/lib/highlight';
 import { StepHeader } from '@/components/StepHeader';
 import { StepNavigation } from '@/components/StepNavigation';
-import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
+import { type CodeTab } from '@/components/CodeBlock';
+import { RunableCode } from '@/components/RunableCode';
+import { CredentialManager } from '@/components/CredentialManager';
 import { DashboardCallout } from '@/components/DashboardCallout';
 import { SecurityNote } from '@/components/SecurityNote';
 import { InfoBox } from '@/components/InfoBox';
@@ -110,28 +112,27 @@ print(resp.json())`;
       </section>
 
       <section className="mt-12">
-        <h3 className="mb-3 text-lg font-semibold">3. Store credentials securely</h3>
+        <h3 className="mb-3 text-lg font-semibold">3. Connect credentials to this guide</h3>
         <p className="mb-4 text-[var(--color-text-secondary)]">
-          Create a local <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs">AtlarCreds.env</code> file
-          in your project directory:
+          Enter your sandbox credentials below to run API examples directly from this
+          page. Credentials are stored in <strong>sessionStorage</strong> &mdash; they
+          never leave your browser tab, are not persisted to disk, and are cleared when
+          you close the tab.
         </p>
 
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
-          <pre className="text-sm text-[var(--color-text-secondary)]">
-{`ATLAR_ACCESS_KEY=your_access_key_here
-ATLAR_SECRET=your_secret_here`}
-          </pre>
+        <CredentialManager />
+
+        <div className="mt-6">
+          <SecurityNote title="Credential safety">
+            <p>
+              Only use <strong>sandbox</strong> credentials here &mdash; never production
+              secrets. For your own projects, store credentials in environment variables
+              and add <code>.env</code> files to <code>.gitignore</code>.
+            </p>
+          </SecurityNote>
         </div>
 
-        <SecurityNote title="Credential safety">
-          <p>
-            <strong>Never</strong> hardcode your access key or secret in notebooks,
-            scripts, or code you commit to version control. Always use environment
-            variables and add your <code>.env</code> files to <code>.gitignore</code>.
-          </p>
-        </SecurityNote>
-
-        <InfoBox variant="tip" title="Using python-dotenv">
+        <InfoBox variant="tip" title="Using python-dotenv in your own code">
           <p>
             The Python examples in this guide use <code>python-dotenv</code> to load
             credentials from an <code>AtlarCreds.env</code> file. Install it
@@ -149,15 +150,33 @@ ATLAR_SECRET=your_secret_here`}
           Dashboard). Use negative amounts for expenses.
         </p>
 
-        <InfoBox variant="info" title="Replace placeholders before running">
-          <p>
-            Replace <code>&lt;YOUR_ACCESS_KEY&gt;</code> and <code>&lt;YOUR_SECRET&gt;</code> with
-            the credentials you just created above.
-            Replace <code>&lt;YOUR_ACCOUNT_ID&gt;</code> with a Testbank account ID from your Dashboard.
-          </p>
-        </InfoBox>
-
-        <CodeBlock tabs={testbankTabs} />
+        <RunableCode
+          tabs={testbankTabs}
+          apiCall={{
+            method: 'POST',
+            path: '/v1/testbank/transactions',
+            headers: {
+              'X-Testbank-Authorization': 'Basic dXNlcjM6cGFzczM=',
+            },
+            body: {
+              accountId: '{{accountId}}',
+              date: '2025-12-01',
+              valueDate: '2025-12-01',
+              amount: { currency: 'EUR', value: 1500 },
+              remittanceInformation: {
+                type: 'UNSTRUCTURED',
+                value: 'Test deposit of EUR 15',
+              },
+            },
+          }}
+          parameters={[
+            {
+              key: 'accountId',
+              label: 'Account ID',
+              placeholder: 'Paste a Testbank account ID from your Dashboard',
+            },
+          ]}
+        />
 
         <InfoBox variant="tip" title="Refreshing data">
           <p>
