@@ -13,14 +13,16 @@ export default async function RolesAndAccessPage() {
   const step = getStep('roles-and-access')!;
   const { prev, next } = getAdjacentSteps('roles-and-access');
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const testbankCurl = `curl -X POST 'https://api.atlar.com/v1/testbank/transactions' \\
   -u '<YOUR_ACCESS_KEY>:<YOUR_SECRET>' \\
   -H 'X-Testbank-Authorization: Basic dXNlcjM6cGFzczM=' \\
   -H 'Content-Type: application/json' \\
   -d '{
     "accountId": "<YOUR_ACCOUNT_ID>",
-    "date": "2025-12-01",
-    "valueDate": "2025-12-01",
+    "date": "${today}",
+    "valueDate": "${today}",
     "amount": {
       "currency": "EUR",
       "value": 1500
@@ -32,16 +34,18 @@ export default async function RolesAndAccessPage() {
   }'`;
 
   const testbankPython = `import requests
+from datetime import date
 
 url = "https://api.atlar.com/v1/testbank/transactions"
+today = date.today().isoformat()
 headers = {
     "X-Testbank-Authorization": "Basic dXNlcjM6cGFzczM=",
     "Content-Type": "application/json",
 }
 payload = {
     "accountId": "<YOUR_ACCOUNT_ID>",
-    "date": "2025-12-01",
-    "valueDate": "2025-12-01",
+    "date": today,
+    "valueDate": today,
     "amount": {"currency": "EUR", "value": 1500},
     "remittanceInformation": {
         "type": "UNSTRUCTURED",
@@ -77,7 +81,7 @@ print(resp.json())`;
           new role. For this getting-started guide, grant full access to:
         </p>
         <ul className="mb-6 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
-          {['Accounts', 'Counterparties', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates'].map((scope) => (
+          {['Accounts', 'Counterparties', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates', 'Testbank Transactions', 'Webhooks'].map((scope) => (
             <li key={scope} className="flex items-center gap-2">
               <span className="text-emerald-500">✓</span> {scope}
             </li>
@@ -160,12 +164,12 @@ print(resp.json())`;
             },
             body: {
               accountId: '{{accountId}}',
-              date: '2025-12-01',
-              valueDate: '2025-12-01',
-              amount: { currency: 'EUR', value: 1500 },
+              date: '{{date}}',
+              valueDate: '{{date}}',
+              amount: { currency: '{{currency}}', value: '{{amount}}' },
               remittanceInformation: {
                 type: 'UNSTRUCTURED',
-                value: 'Test deposit of EUR 15',
+                value: '{{description}}',
               },
             },
           }}
@@ -174,6 +178,40 @@ print(resp.json())`;
               key: 'accountId',
               label: 'Account ID',
               placeholder: 'Paste a Testbank account ID from your Dashboard',
+            },
+            {
+              key: 'amount',
+              label: 'Amount (minor units)',
+              defaultValue: '1500',
+              type: 'number',
+              half: true,
+            },
+            {
+              key: 'currency',
+              label: 'Currency',
+              defaultValue: 'EUR',
+              type: 'select',
+              options: [
+                { value: 'EUR', label: 'EUR' },
+                { value: 'SEK', label: 'SEK' },
+                { value: 'DKK', label: 'DKK' },
+                { value: 'GBP', label: 'GBP' },
+                { value: 'USD', label: 'USD' },
+              ],
+              half: true,
+            },
+            {
+              key: 'date',
+              label: 'Date',
+              defaultValue: new Date().toISOString().slice(0, 10),
+              type: 'date',
+              half: true,
+            },
+            {
+              key: 'description',
+              label: 'Description',
+              defaultValue: 'Test deposit of EUR 15',
+              half: true,
             },
           ]}
         />
