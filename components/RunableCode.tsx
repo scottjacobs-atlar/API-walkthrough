@@ -50,14 +50,7 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
     setParamValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  function resolveValue(raw: string): string | number {
-    const field = parameters.find((p) => `{{${p.key}}}` === raw);
-    if (field?.type === 'number') {
-      const n = Number(raw);
-      if (!isNaN(n)) return n;
-    }
-    return raw;
-  }
+  const paramTypeMap = Object.fromEntries(parameters.map((p) => [p.key, p.type ?? 'text']));
 
   function substituteParams(obj: unknown): unknown {
     if (typeof obj === 'string') {
@@ -66,11 +59,15 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
         today: new Date().toISOString().slice(0, 10),
       };
 
-      const isWholePlaceholder = /^\{\{(\w+)\}\}$/.test(obj);
-      if (isWholePlaceholder) {
-        const key = obj.slice(2, -2);
+      const match = /^\{\{(\w+)\}\}$/.exec(obj);
+      if (match) {
+        const key = match[1];
         const replaced = allValues[key] ?? obj;
-        return resolveValue(replaced);
+        if (paramTypeMap[key] === 'number') {
+          const n = Number(replaced);
+          if (!isNaN(n)) return n;
+        }
+        return replaced;
       }
 
       let out = obj;
