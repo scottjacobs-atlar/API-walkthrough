@@ -81,7 +81,7 @@ print(resp.json())`;
           new role. For this getting-started guide, grant full access to:
         </p>
         <ul className="mb-6 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
-          {['Accounts', 'Counterparties', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates', 'Testbank Transactions', 'Webhooks'].map((scope) => (
+          {['Accounts', 'Account Balances', 'Counterparties', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates', 'Testbank Transactions', 'Webhooks'].map((scope) => (
             <li key={scope} className="flex items-center gap-2">
               <span className="text-emerald-500">✓</span> {scope}
             </li>
@@ -173,11 +173,18 @@ print(resp.json())`;
               },
             },
           }}
+          successMessage="Transaction created."
+          successLink={{
+            urlTemplate: 'https://app.atlar.com/accounts/{{accountId}}/details/transactions?date%5BGTE%5D=now-6d&date%5BLTE%5D=now&date.options.dateBasis%5BEQ%5D=date',
+            label: 'View transactions in Dashboard',
+          }}
           parameters={[
             {
               key: 'accountId',
               label: 'Account ID',
               placeholder: 'Paste a Testbank account ID from your Dashboard',
+              helpUrl: 'https://app.atlar.com/accounts',
+              helpLabel: 'Find your accounts',
             },
             {
               key: 'amount',
@@ -218,9 +225,13 @@ print(resp.json())`;
 
         <InfoBox variant="tip" title="Refreshing data">
           <p>
-            After creating a Testbank transaction, go to your account in the Dashboard and
-            click the <strong>Refresh</strong> button, or wait for the hourly sync. The
-            transaction will then appear in your account&apos;s transaction list.
+            After creating a Testbank transaction, open your account in the{' '}
+            <a href="https://app.atlar.com" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">
+              Dashboard
+            </a>{' '}
+            and click <strong>Refresh Pending</strong> or <strong>Refresh Booked</strong> to
+            pull the latest data from the Testbank. The transaction will then appear in
+            your account&apos;s transaction list.
           </p>
         </InfoBox>
       </section>
