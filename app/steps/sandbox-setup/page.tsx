@@ -78,7 +78,7 @@ print(resp.json())`;
         <DashboardCallout
           path="/test-data"
           title="Dashboard: Test Data"
-          description="After creating your organization, navigate to Settings > Test Data to connect the Atlar Testbank and populate sample data."
+          description="After creating your organization, navigate to Settings > Organization and then click 'Generate Test Data' to connect the Atlar Testbank and populate sample data."
         />
       </section>
 
