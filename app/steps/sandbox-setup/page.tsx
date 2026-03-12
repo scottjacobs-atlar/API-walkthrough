@@ -1,60 +1,12 @@
 import { getStep, getAdjacentSteps } from '@/lib/steps';
-import { highlight } from '@/lib/highlight';
 import { StepHeader } from '@/components/StepHeader';
 import { StepNavigation } from '@/components/StepNavigation';
-import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
 import { DashboardCallout } from '@/components/DashboardCallout';
 import { SecurityNote } from '@/components/SecurityNote';
-import { InfoBox } from '@/components/InfoBox';
 
-export default async function SandboxSetupPage() {
+export default function SandboxSetupPage() {
   const step = getStep('sandbox-setup')!;
   const { prev, next } = getAdjacentSteps('sandbox-setup');
-
-  const testbankCurl = `curl -X POST 'https://api.atlar.com/v1/testbank/transactions' \\
-  -u 'ACCESS_KEY:SECRET' \\
-  -H 'X-Testbank-Authorization: Basic dXNlcjM6cGFzczM=' \\
-  -H 'Content-Type: application/json' \\
-  -d '{
-    "accountId": "ACCOUNT_ID",
-    "date": "2025-12-01",
-    "valueDate": "2025-12-01",
-    "amount": {
-      "currency": "EUR",
-      "value": 1500
-    },
-    "remittanceInformation": {
-      "type": "UNSTRUCTURED",
-      "value": "Test deposit of EUR 15"
-    }
-  }'`;
-
-  const testbankPython = `import requests
-
-url = "https://api.atlar.com/v1/testbank/transactions"
-headers = {
-    "X-Testbank-Authorization": "Basic dXNlcjM6cGFzczM=",
-    "Content-Type": "application/json",
-}
-payload = {
-    "accountId": "ACCOUNT_ID",
-    "date": "2025-12-01",
-    "valueDate": "2025-12-01",
-    "amount": {"currency": "EUR", "value": 1500},
-    "remittanceInformation": {
-        "type": "UNSTRUCTURED",
-        "value": "Test deposit of EUR 15",
-    },
-}
-
-resp = requests.post(url, json=payload, headers=headers,
-                     auth=("ACCESS_KEY", "SECRET"))
-print(resp.json())`;
-
-  const tabs: CodeTab[] = [
-    { label: 'curl', lang: 'bash', code: testbankCurl, highlightedHtml: await highlight(testbankCurl, 'bash') },
-    { label: 'Python', lang: 'python', code: testbankPython, highlightedHtml: await highlight(testbankPython, 'python') },
-  ];
 
   return (
     <>
@@ -157,25 +109,6 @@ print(resp.json())`;
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="mb-4 text-2xl font-bold">Simulating Testbank transactions</h2>
-        <p className="mb-4 text-[var(--color-text-secondary)]">
-          You can create synthetic transactions on Testbank accounts via API. These
-          appear in Atlar after the next sync (either the hourly cron job or clicking
-          <strong> Refresh</strong> in the Dashboard). Use negative amounts for expenses.
-        </p>
-
-        <CodeBlock tabs={tabs} />
-
-        <InfoBox variant="tip" title="Refreshing data">
-          <p>
-            After creating a Testbank transaction, go to your account in the Dashboard and
-            click the <strong>Refresh</strong> button, or wait for the hourly sync. The
-            transaction will then appear in your account&apos;s transaction list.
-          </p>
-        </InfoBox>
       </section>
 
       <SecurityNote title="Sandbox safety">
