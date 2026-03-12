@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useCredentials } from '@/lib/credentials';
 import { CodeBlock, type CodeTab } from './CodeBlock';
 
@@ -20,6 +20,8 @@ export type ParamField = {
   options?: { value: string; label: string }[];
   required?: boolean;
   half?: boolean;
+  helpUrl?: string;
+  helpLabel?: string;
 };
 
 type Props = {
@@ -27,6 +29,15 @@ type Props = {
   filename?: string;
   apiCall: ApiCall;
   parameters?: ParamField[];
+  authMode?: 'basic' | 'bearer';
+  externalParams?: Record<string, string>;
+  onResult?: (result: { status: number; body: unknown }) => void;
+  renderResult?: (result: { status: number; body: unknown }) => ReactNode;
+  successLink?: {
+    urlTemplate: string;
+    label: string;
+  };
+  successMessage?: string;
 };
 
 function getInitialValues(parameters: ParamField[]): Record<string, string> {
@@ -37,14 +48,25 @@ function getInitialValues(parameters: ParamField[]): Record<string, string> {
   return out;
 }
 
-export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props) {
-  const { credentials, isSet } = useCredentials();
+export function RunableCode({ tabs, filename, apiCall, parameters = [], authMode = 'basic', externalParams, onResult, renderResult, successLink, successMessage }: Props) {
+  const { credentials, isSet, token } = useCredentials();
   const [paramValues, setParamValues] = useState<Record<string, string>>(
     () => getInitialValues(parameters),
   );
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ status: number; body: unknown } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!externalParams) return;
+    setParamValues((prev) => {
+      const next = { ...prev };
+      for (const [k, v] of Object.entries(externalParams)) {
+        if (v) next[k] = v;
+      }
+      return next;
+    });
+  }, [externalParams]);
 
   function setParam(key: string, value: string) {
     setParamValues((prev) => ({ ...prev, [key]: value }));
@@ -91,25 +113,38 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
   const requiredParams = parameters.filter((p) => p.required !== false);
   const missingParams = requiredParams.filter((p) => !paramValues[p.key]?.trim());
 
+  const useBearer = authMode === 'bearer';
+  const canRun = useBearer
+    ? !!(token && token.expiresAt > Date.now()) && missingParams.length === 0
+    : isSet && missingParams.length === 0;
+
   async function run() {
-    if (!credentials || missingParams.length > 0) return;
+    if (!canRun) return;
     setRunning(true);
     setResult(null);
     setError(null);
 
     try {
       const body = apiCall.body ? substituteParams(apiCall.body) : undefined;
+      const resolvedPath = substituteParams(apiCall.path) as string;
+
+      const proxyHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (useBearer) {
+        proxyHeaders['x-atlar-bearer-token'] = token!.accessToken;
+      } else {
+        proxyHeaders['x-atlar-access-key'] = credentials!.accessKey;
+        proxyHeaders['x-atlar-secret'] = credentials!.secret;
+      }
 
       const resp = await fetch('/api/proxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-atlar-access-key': credentials.accessKey,
-          'x-atlar-secret': credentials.secret,
-        },
+        headers: proxyHeaders,
         body: JSON.stringify({
           method: apiCall.method,
-          path: apiCall.path,
+          path: resolvedPath,
           headers: apiCall.headers,
           body,
         }),
@@ -120,7 +155,9 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
       if (data.error) {
         setError(data.error);
       } else {
-        setResult({ status: data.status, body: data.body });
+        const r = { status: data.status, body: data.body };
+        setResult(r);
+        onResult?.(r);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');
@@ -141,21 +178,36 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
     <div className="space-y-3">
       {parameters.length > 0 && (
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {parameters.map((p) => (
               <div
                 key={p.key}
-                className={p.half ? 'w-[calc(50%-6px)] min-w-[140px]' : 'w-full min-w-[200px] flex-1'}
+                className={p.half ? '' : 'col-span-2'}
               >
-                <label
-                  htmlFor={`param-${p.key}`}
-                  className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]"
-                >
-                  {p.label}
-                  {p.required === false && (
-                    <span className="ml-1 font-normal text-[var(--color-text-tertiary)]">(optional)</span>
+                <div className="mb-1 flex items-baseline justify-between">
+                  <label
+                    htmlFor={`param-${p.key}`}
+                    className="text-xs font-medium text-[var(--color-text-secondary)]"
+                  >
+                    {p.label}
+                    {p.required === false && (
+                      <span className="ml-1 font-normal text-[var(--color-text-tertiary)]">(optional)</span>
+                    )}
+                  </label>
+                  {p.helpUrl && (
+                    <a
+                      href={p.helpUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] font-medium text-atlar-600 hover:text-atlar-700 dark:text-atlar-400 dark:hover:text-atlar-300"
+                    >
+                      {p.helpLabel ?? 'Open in Dashboard'}
+                      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
                   )}
-                </label>
+                </div>
 
                 {p.type === 'select' && p.options ? (
                   <select
@@ -193,7 +245,7 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
       <div className="flex items-center gap-3">
         <button
           onClick={run}
-          disabled={!isSet || running || missingParams.length > 0}
+          disabled={!canRun || running}
           className="inline-flex items-center gap-2 rounded-lg bg-atlar-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-atlar-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {running ? (
@@ -209,17 +261,24 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
               </svg>
-              Run
+              Try it
             </>
           )}
         </button>
 
-        {!isSet && (
+        {useBearer && (!token || token.expiresAt <= Date.now()) && (
+          <span className="text-xs text-[var(--color-text-tertiary)]">
+            Get a token on the{' '}
+            <a href="/steps/authentication" className="underline underline-offset-2">Authentication</a>{' '}
+            step first
+          </span>
+        )}
+        {!useBearer && !isSet && (
           <span className="text-xs text-[var(--color-text-tertiary)]">
             Connect your credentials above to run this example
           </span>
         )}
-        {isSet && missingParams.length > 0 && (
+        {canRun === false && missingParams.length > 0 && (useBearer ? !!token : isSet) && (
           <span className="text-xs text-[var(--color-text-tertiary)]">
             Fill in {missingParams.map((p) => p.label).join(', ')} to run
           </span>
@@ -235,17 +294,44 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [] }: Props)
       )}
 
       {result && (
-        <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-4 py-2">
-            <span className="text-xs font-medium text-[var(--color-text-secondary)]">Response</span>
-            <span className={`font-mono text-xs font-semibold ${statusColor}`}>
-              {result.status}
-            </span>
-          </div>
-          <pre className="overflow-x-auto p-4 text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
-            <code>{typeof result.body === 'string' ? result.body : JSON.stringify(result.body, null, 2)}</code>
-          </pre>
-        </div>
+        <>
+          {result.status >= 200 && result.status < 300 && successLink && (
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 dark:bg-emerald-950/20">
+              <svg className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm text-emerald-800 dark:text-emerald-300">
+                {successMessage ?? 'Success!'}{' '}
+                <a
+                  href={Object.entries(paramValues).reduce(
+                    (url, [k, v]) => url.replace(`{{${k}}}`, encodeURIComponent(v)),
+                    successLink.urlTemplate,
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-2"
+                >
+                  {successLink.label} &rarr;
+                </a>
+              </span>
+            </div>
+          )}
+          {renderResult ? (
+            renderResult(result)
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+              <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-4 py-2">
+                <span className="text-xs font-medium text-[var(--color-text-secondary)]">Response</span>
+                <span className={`font-mono text-xs font-semibold ${statusColor}`}>
+                  {result.status}
+                </span>
+              </div>
+              <pre className="overflow-x-auto p-4 text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
+                <code>{typeof result.body === 'string' ? result.body : JSON.stringify(result.body, null, 2)}</code>
+              </pre>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

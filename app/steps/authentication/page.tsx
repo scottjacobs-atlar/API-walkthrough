@@ -4,6 +4,7 @@ import { StepHeader } from '@/components/StepHeader';
 import { StepNavigation } from '@/components/StepNavigation';
 import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
 import { ApiCall } from '@/components/ApiCall';
+import { TokenExchange } from '@/components/TokenExchange';
 import { SecurityNote } from '@/components/SecurityNote';
 import { InfoBox } from '@/components/InfoBox';
 
@@ -118,6 +119,16 @@ curl 'https://api.atlar.com/financial-data/v2/accounts' \\
         >
           <CodeBlock tabs={tokenTabs} />
         </ApiCall>
+
+        <div className="my-6">
+          <h3 className="mb-3 text-lg font-semibold">Try it: get a token</h3>
+          <p className="mb-4 text-[var(--color-text-secondary)]">
+            Click below to exchange your sandbox credentials for a live access token.
+            The token timer will appear in the sidebar &mdash; click
+            the refresh icon when it runs low to keep going.
+          </p>
+          <TokenExchange />
+        </div>
 
         <h3 className="mb-3 mt-8 text-lg font-semibold">Token response</h3>
         <p className="mb-4 text-[var(--color-text-secondary)]">
