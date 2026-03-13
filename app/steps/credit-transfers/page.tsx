@@ -3,6 +3,7 @@ import { highlight } from '@/lib/highlight';
 import { StepHeader } from '@/components/StepHeader';
 import { StepNavigation } from '@/components/StepNavigation';
 import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
+import { CreditTransferForm } from '@/components/CreditTransferForm';
 import { ApiCall } from '@/components/ApiCall';
 import { DashboardCallout } from '@/components/DashboardCallout';
 import { InfoBox } from '@/components/InfoBox';
@@ -16,40 +17,40 @@ export default async function CreditTransfersPage() {
   -H 'Content-Type: application/json' \\
   -d '{
     "amount": {
-      "currency": "EUR",
-      "value": 2500
+      "currency": "{{currency}}",
+      "value": {{amount}}
     },
-    "date": "2025-12-01",
-    "scheme": "SCT",
+    "date": "{{today}}",
+    "scheme": "{{scheme}}",
     "source": {
       "type": "ACCOUNT",
-      "id": "<source-account-id>"
+      "id": "{{sourceAccountId}}"
     },
     "destination": {
       "type": "EXTERNAL_ACCOUNT",
-      "id": "<external-account-id>"
+      "id": "{{externalAccountId}}"
     },
-    "reference": "payout-12345"
+    "reference": "{{reference}}"
   }'`;
 
   const sctPython = `CREDIT_TRANSFERS_URL = "https://api.atlar.com/payments/v2/credit-transfers"
 
 payload = {
     "amount": {
-        "currency": "EUR",
-        "value": 2500,       # EUR 25.00
+        "currency": "{{currency}}",
+        "value": {{amount}},
     },
-    "date": "2025-12-01",    # YYYY-MM-DD
-    "scheme": "SCT",          # SEPA Credit Transfer
+    "date": "{{today}}",
+    "scheme": "{{scheme}}",
     "source": {
         "type": "ACCOUNT",
-        "id": source_account_id,
+        "id": "{{sourceAccountId}}",
     },
     "destination": {
         "type": "EXTERNAL_ACCOUNT",
-        "id": external_account_id,
+        "id": "{{externalAccountId}}",
     },
-    "reference": "payout-12345",
+    "reference": "{{reference}}",
 }
 
 resp = session.post(CREDIT_TRANSFERS_URL, json=payload)
@@ -57,34 +58,6 @@ payment = resp.json()
 
 print(f"Payment ID: {payment['id']}")
 print(f"Status: {payment['status']}")`;
-
-  const sctResponse = `{
-  "id": "422a164c-4548-11ed-8d31-0a58a9feac02",
-  "status": "CREATED",
-  "amount": {
-    "currency": "EUR",
-    "value": 2500,
-    "stringValue": "25.00"
-  },
-  "date": "2025-12-01",
-  "paymentScheme": { "type": "SCT", "displayName": "Sepa Credit Transfer" },
-  "sourceAccount": {
-    "id": "cf010f90-83e2-420d-b16e-eb68dbfd7047",
-    "name": "My EUR Account",
-    "bank": { "bic": "ATLRSESSXXX", "name": "Testbank" }
-  },
-  "approvalChain": {
-    "approvalSteps": [
-      {
-        "id": "b698ab4e-...",
-        "requiredRole": { "name": "Owner", "owner": true },
-        "status": "PENDING"
-      }
-    ]
-  },
-  "etag": "version:1",
-  ...
-}`;
 
   const batchCurl = `curl -X POST 'https://api.atlar.com/payments/v2beta/credit-transfer-batches' \\
   -H 'Authorization: Bearer ACCESS_TOKEN' \\
@@ -154,9 +127,6 @@ print(f"Batch ID: {batch['id']}, Status: {batch['status']}")`;
     { label: 'curl', lang: 'bash', code: sctCurl, highlightedHtml: await highlight(sctCurl, 'bash') },
     { label: 'Python', lang: 'python', code: sctPython, highlightedHtml: await highlight(sctPython, 'python') },
   ];
-  const sctRespTabs: CodeTab[] = [
-    { label: 'Response', lang: 'json', code: sctResponse, highlightedHtml: await highlight(sctResponse, 'json') },
-  ];
   const batchTabs: CodeTab[] = [
     { label: 'curl', lang: 'bash', code: batchCurl, highlightedHtml: await highlight(batchCurl, 'bash') },
     { label: 'Python', lang: 'python', code: batchPython, highlightedHtml: await highlight(batchPython, 'python') },
@@ -170,8 +140,8 @@ print(f"Batch ID: {batch['id']}, Status: {batch['status']}")`;
         <h2 className="mb-4 text-2xl font-bold">Creating a SEPA Credit Transfer</h2>
         <p className="mb-4 text-[var(--color-text-secondary)]">
           With a source account ID (from Step 4) and a destination external account
-          ID (from Step 5), you can create your first payment. The example below
-          creates a SEPA Credit Transfer (SCT) for EUR 25.00.
+          ID (from Step 5), you can create your first payment. If you completed those
+          steps earlier in this guide, the IDs are pre-filled automatically.
         </p>
 
         <ApiCall
@@ -179,9 +149,7 @@ print(f"Batch ID: {batch['id']}, Status: {batch['status']}")`;
           path="/payments/v2/credit-transfers"
           description="Create a single credit transfer payment. Requires source account ID and destination external account ID."
         >
-          <CodeBlock tabs={sctTabs} />
-          <h4 className="mb-2 mt-6 text-sm font-semibold text-[var(--color-text-tertiary)]">Example response</h4>
-          <CodeBlock tabs={sctRespTabs} />
+          <CreditTransferForm tabs={sctTabs} />
         </ApiCall>
 
         <DashboardCallout

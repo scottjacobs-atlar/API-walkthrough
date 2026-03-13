@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { useCredentials } from '@/lib/credentials';
 import { CodeBlock, type CodeTab } from './CodeBlock';
 
@@ -109,6 +109,24 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [], authMode
     }
     return obj;
   }
+
+  const liveTabs = useMemo(() => {
+    const allValues: Record<string, string> = {
+      ...paramValues,
+      today: new Date().toISOString().slice(0, 10),
+    };
+    return tabs.map((tab) => {
+      let code = tab.code;
+      let html = tab.highlightedHtml;
+      for (const [k, v] of Object.entries(allValues)) {
+        if (v) {
+          code = code.replaceAll(`{{${k}}}`, v);
+          html = html.replaceAll(`{{${k}}}`, v);
+        }
+      }
+      return { ...tab, code, highlightedHtml: html };
+    });
+  }, [tabs, paramValues]);
 
   const requiredParams = parameters.filter((p) => p.required !== false);
   const missingParams = requiredParams.filter((p) => !paramValues[p.key]?.trim());
@@ -239,7 +257,7 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [], authMode
         </div>
       )}
 
-      <CodeBlock tabs={tabs} filename={filename} />
+      <CodeBlock tabs={liveTabs} filename={filename} />
 
       {/* Run bar */}
       <div className="flex items-center gap-3">
@@ -303,10 +321,18 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [], authMode
               <span className="text-sm text-emerald-800 dark:text-emerald-300">
                 {successMessage ?? 'Success!'}{' '}
                 <a
-                  href={Object.entries(paramValues).reduce(
-                    (url, [k, v]) => url.replace(`{{${k}}}`, encodeURIComponent(v)),
-                    successLink.urlTemplate,
-                  )}
+                  href={(() => {
+                    let url = Object.entries(paramValues).reduce(
+                      (u, [k, v]) => u.replace(`{{${k}}}`, encodeURIComponent(v)),
+                      successLink.urlTemplate,
+                    );
+                    if (result.body && typeof result.body === 'object') {
+                      for (const [k, v] of Object.entries(result.body as Record<string, unknown>)) {
+                        if (typeof v === 'string') url = url.replace(`{{response.${k}}}`, encodeURIComponent(v));
+                      }
+                    }
+                    return url;
+                  })()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium underline underline-offset-2"

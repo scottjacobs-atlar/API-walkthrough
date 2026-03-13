@@ -2,7 +2,8 @@ import { getStep, getAdjacentSteps } from '@/lib/steps';
 import { highlight } from '@/lib/highlight';
 import { StepHeader } from '@/components/StepHeader';
 import { StepNavigation } from '@/components/StepNavigation';
-import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
+import { type CodeTab } from '@/components/CodeBlock';
+import { CounterpartyForm } from '@/components/CounterpartyForm';
 import { ApiCall } from '@/components/ApiCall';
 import { DashboardCallout } from '@/components/DashboardCallout';
 import { SecurityNote } from '@/components/SecurityNote';
@@ -16,32 +17,31 @@ export default async function CounterpartiesPage() {
   -H 'Authorization: Bearer ACCESS_TOKEN' \\
   -H 'Content-Type: application/json' \\
   -d '{
-    "legalName": "Example Company GmbH",
-    "alias": "Customer #1234",
-    "partyType": "INDIVIDUAL",
-    "email": "john.smith@example.com",
-    "phone": "+46123456789",
+    "legalName": "{{legalName}}",
+    "alias": "{{alias}}",
+    "partyType": "{{partyType}}",
+    "email": "{{email}}",
     "address": {
-      "country": "DE",
-      "city": "Berlin",
-      "postalCode": "10115",
-      "streetName": "Example Strasse",
-      "streetNumber": "47"
+      "country": "{{market}}",
+      "city": "{{city}}",
+      "postalCode": "{{postalCode}}",
+      "streetName": "{{streetName}}",
+      "streetNumber": "{{streetNumber}}"
     },
     "nationalIdentifier": {
       "type": "CIVIC",
-      "market": "DE",
-      "number": "2012121212"
+      "market": "{{market}}",
+      "number": "{{nationalId}}"
     },
     "metadata": { "segment": "trial" },
     "accounts": [
       {
-        "market": "DE",
+        "market": "{{market}}",
         "identifiers": [
           {
             "type": "IBAN",
-            "market": "DE",
-            "number": "DE64500105173198833324"
+            "market": "{{market}}",
+            "number": "{{iban}}"
           }
         ]
       }
@@ -51,30 +51,29 @@ export default async function CounterpartiesPage() {
   const createPython = `COUNTERPARTY_URL = "https://api.atlar.com/payments/v2/counterparties"
 
 payload = {
-    "legalName": "Example Company GmbH",
-    "alias": "Customer #1234",
-    "partyType": "INDIVIDUAL",
-    "email": "john.smith@example.com",
-    "phone": "+46123456789",
+    "legalName": "{{legalName}}",
+    "alias": "{{alias}}",
+    "partyType": "{{partyType}}",
+    "email": "{{email}}",
     "address": {
-        "country": "DE",
-        "city": "Berlin",
-        "postalCode": "10115",
-        "streetName": "Example Strasse",
-        "streetNumber": "47",
+        "country": "{{market}}",
+        "city": "{{city}}",
+        "postalCode": "{{postalCode}}",
+        "streetName": "{{streetName}}",
+        "streetNumber": "{{streetNumber}}",
     },
     "nationalIdentifier": {
         "type": "CIVIC",
-        "market": "DE",
-        "number": "2012121212",
+        "market": "{{market}}",
+        "number": "{{nationalId}}",
     },
     "metadata": {"segment": "trial"},
     "accounts": [
         {
-            "market": "DE",
+            "market": "{{market}}",
             "identifiers": [
-                {"type": "IBAN", "market": "DE",
-                 "number": "DE64500105173198833324"}
+                {"type": "IBAN", "market": "{{market}}",
+                 "number": "{{iban}}"}
             ],
         }
     ],
@@ -89,31 +88,9 @@ counterparty_id = counterparty["id"]
 print(f"Counterparty ID: {counterparty_id}")
 print(f"External Account ID: {external_account_id}")`;
 
-  const createResponse = `{
-  "id": "7af0ea0b-7366-42aa-ad83-49e93e41ce5d",
-  "legalName": "Example Company GmbH",
-  "alias": "Customer #1234",
-  "partyType": "INDIVIDUAL",
-  "accounts": [
-    {
-      "id": "e80de5e0-1b05-4974-8c73-084027185c7f",
-      "identifiers": [
-        { "type": "IBAN", "market": "DE",
-          "number": "DE64500105173198833324" }
-      ],
-      "market": "DE"
-    }
-  ],
-  "etag": "version:1",
-  ...
-}`;
-
   const createTabs: CodeTab[] = [
     { label: 'curl', lang: 'bash', code: createCurl, highlightedHtml: await highlight(createCurl, 'bash') },
     { label: 'Python', lang: 'python', code: createPython, highlightedHtml: await highlight(createPython, 'python') },
-  ];
-  const respTabs: CodeTab[] = [
-    { label: 'Response', lang: 'json', code: createResponse, highlightedHtml: await highlight(createResponse, 'json') },
   ];
 
   return (
@@ -147,9 +124,7 @@ print(f"External Account ID: {external_account_id}")`;
           path="/payments/v2/counterparties"
           description="Create a counterparty with an external account. Returns the counterparty and external account IDs."
         >
-          <CodeBlock tabs={createTabs} />
-          <h4 className="mb-2 mt-6 text-sm font-semibold text-[var(--color-text-tertiary)]">Example response</h4>
-          <CodeBlock tabs={respTabs} />
+          <CounterpartyForm tabs={createTabs} />
         </ApiCall>
 
         <DashboardCallout
