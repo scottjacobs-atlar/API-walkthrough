@@ -21,10 +21,14 @@ type CredentialContextValue = {
   saveToken: (accessToken: string, expiresIn: number) => void;
   clearToken: () => void;
   refreshToken: () => Promise<void>;
+  guideIds: Record<string, string>;
+  saveGuideId: (key: string, value: string) => void;
+  clearGuideIds: () => void;
 };
 
 const CREDS_KEY = 'atlar_guide_creds';
 const TOKEN_KEY = 'atlar_guide_token';
+const IDS_KEY = 'atlar_guide_ids';
 
 const CredentialContext = createContext<CredentialContextValue>({
   credentials: null,
@@ -35,6 +39,9 @@ const CredentialContext = createContext<CredentialContextValue>({
   saveToken: () => {},
   clearToken: () => {},
   refreshToken: async () => {},
+  guideIds: {},
+  saveGuideId: () => {},
+  clearGuideIds: () => {},
 });
 
 export function useCredentials() {
@@ -44,6 +51,7 @@ export function useCredentials() {
 export function CredentialProvider({ children }: { children: ReactNode }) {
   const [credentials, setCredentials] = useState<Credentials>(null);
   const [token, setToken] = useState<Token>(null);
+  const [guideIds, setGuideIds] = useState<Record<string, string>>({});
 
   useEffect(() => {
     try {
@@ -61,6 +69,11 @@ export function CredentialProvider({ children }: { children: ReactNode }) {
           sessionStorage.removeItem(TOKEN_KEY);
         }
       }
+    } catch { /* ignore */ }
+
+    try {
+      const raw = sessionStorage.getItem(IDS_KEY);
+      if (raw) setGuideIds(JSON.parse(raw));
     } catch { /* ignore */ }
   }, []);
 
@@ -86,6 +99,19 @@ export function CredentialProvider({ children }: { children: ReactNode }) {
   const clearToken = useCallback(() => {
     setToken(null);
     sessionStorage.removeItem(TOKEN_KEY);
+  }, []);
+
+  const saveGuideId = useCallback((key: string, value: string) => {
+    setGuideIds((prev) => {
+      const next = { ...prev, [key]: value };
+      sessionStorage.setItem(IDS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const clearGuideIds = useCallback(() => {
+    setGuideIds({});
+    sessionStorage.removeItem(IDS_KEY);
   }, []);
 
   const refreshToken = useCallback(async () => {
@@ -114,7 +140,7 @@ export function CredentialProvider({ children }: { children: ReactNode }) {
 
   return (
     <CredentialContext.Provider
-      value={{ credentials, isSet: !!credentials, save, clear, token, saveToken, clearToken, refreshToken }}
+      value={{ credentials, isSet: !!credentials, save, clear, token, saveToken, clearToken, refreshToken, guideIds, saveGuideId, clearGuideIds }}
     >
       {children}
     </CredentialContext.Provider>

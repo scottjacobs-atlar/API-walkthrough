@@ -23,8 +23,8 @@ export default function SandboxSetupPage() {
           production environment depending on what bank connections you add.
         </p>
         <p className="mb-4 text-[var(--color-text-secondary)]">
-          For this guide, keep your organization in <strong>sandbox mode</strong> by
-          only connecting the Atlar Testbank &mdash; never real bank credentials.
+          For this guide, keep your organization free from live data by
+          only connecting the Atlar Testbanks &mdash; never real bank credentials.
         </p>
 
         <DashboardCallout

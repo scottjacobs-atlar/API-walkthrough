@@ -26,11 +26,11 @@ for account in payload["items"]:
     print(f'{account["currency"]} | {account["name"]} | {iban} | {bic}')
     print(f'  ID: {account["id"]}')`;
 
-  const balanceCurl = `curl 'https://api.atlar.com/financial-data/v2/accounts/ACCOUNT_ID/balances?mostRecent=true&limit=100' \\
+  const balanceCurl = `curl 'https://api.atlar.com/financial-data/v2/accounts/{{accountId}}/balances?mostRecent=true&limit=100' \\
   -H 'Authorization: Bearer ACCESS_TOKEN' \\
   -H 'Accept: application/json'`;
 
-  const balancePython = `account_id = "<ACCOUNT_ID>"
+  const balancePython = `account_id = "{{accountId}}"
 
 BALANCE_URL = f"https://api.atlar.com/financial-data/v2/accounts/{account_id}/balances"
 

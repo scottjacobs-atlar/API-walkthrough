@@ -13,23 +13,21 @@ export default async function RolesAndAccessPage() {
   const step = getStep('roles-and-access')!;
   const { prev, next } = getAdjacentSteps('roles-and-access');
 
-  const today = new Date().toISOString().slice(0, 10);
-
   const testbankCurl = `curl -X POST 'https://api.atlar.com/v1/testbank/transactions' \\
   -u '<YOUR_ACCESS_KEY>:<YOUR_SECRET>' \\
   -H 'X-Testbank-Authorization: Basic dXNlcjM6cGFzczM=' \\
   -H 'Content-Type: application/json' \\
   -d '{
-    "accountId": "<YOUR_ACCOUNT_ID>",
-    "date": "${today}",
-    "valueDate": "${today}",
+    "accountId": "{{accountId}}",
+    "date": "{{date}}",
+    "valueDate": "{{date}}",
     "amount": {
-      "currency": "EUR",
-      "value": 1500
+      "currency": "{{currency}}",
+      "value": {{amount}}
     },
     "remittanceInformation": {
       "type": "UNSTRUCTURED",
-      "value": "Test deposit of EUR 15"
+      "value": "{{description}}"
     }
   }'`;
 
@@ -37,19 +35,18 @@ export default async function RolesAndAccessPage() {
 from datetime import date
 
 url = "https://api.atlar.com/v1/testbank/transactions"
-today = date.today().isoformat()
 headers = {
     "X-Testbank-Authorization": "Basic dXNlcjM6cGFzczM=",
     "Content-Type": "application/json",
 }
 payload = {
-    "accountId": "<YOUR_ACCOUNT_ID>",
-    "date": today,
-    "valueDate": today,
-    "amount": {"currency": "EUR", "value": 1500},
+    "accountId": "{{accountId}}",
+    "date": "{{date}}",
+    "valueDate": "{{date}}",
+    "amount": {"currency": "{{currency}}", "value": {{amount}}},
     "remittanceInformation": {
         "type": "UNSTRUCTURED",
-        "value": "Test deposit of EUR 15",
+        "value": "{{description}}",
     },
 }
 
@@ -81,7 +78,7 @@ print(resp.json())`;
           new role. For this getting-started guide, grant full access to:
         </p>
         <ul className="mb-6 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
-          {['Accounts', 'Account Balances', 'Counterparties', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates', 'Testbank Transactions', 'Webhooks'].map((scope) => (
+          {['Accounts', 'Account Balances', 'Counterparties', 'Entities', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates', 'Testbank Transactions', 'Transactions', 'Webhooks'].map((scope) => (
             <li key={scope} className="flex items-center gap-2">
               <span className="text-emerald-500">✓</span> {scope}
             </li>

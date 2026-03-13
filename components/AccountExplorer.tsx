@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import { useCredentials } from '@/lib/credentials';
 import { type CodeTab } from './CodeBlock';
 import { RunableCode } from './RunableCode';
 
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export function AccountExplorer({ listTabs, balanceTabs }: Props) {
+  const { saveGuideId } = useCredentials();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [showRaw, setShowRaw] = useState(false);
@@ -121,7 +123,11 @@ export function AccountExplorer({ listTabs, balanceTabs }: Props) {
                           </span>
                         ) : (
                           <button
-                            onClick={() => setSelectedId(acct.id)}
+                            onClick={() => {
+                              setSelectedId(acct.id);
+                              saveGuideId('sourceAccountId', acct.id);
+                              saveGuideId('sourceAccountLabel', `${acct.name} (${acct.currency})`);
+                            }}
                             className="rounded-md px-2.5 py-1 text-xs font-medium text-atlar-600 transition-colors hover:bg-atlar-50 dark:text-atlar-400 dark:hover:bg-atlar-900/30"
                           >
                             Select

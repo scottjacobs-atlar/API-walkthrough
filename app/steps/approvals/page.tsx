@@ -2,8 +2,8 @@ import { getStep, getAdjacentSteps } from '@/lib/steps';
 import { highlight } from '@/lib/highlight';
 import { StepHeader } from '@/components/StepHeader';
 import { StepNavigation } from '@/components/StepNavigation';
-import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
-import { ApiCall } from '@/components/ApiCall';
+import { type CodeTab } from '@/components/CodeBlock';
+import { ApprovalForm } from '@/components/ApprovalForm';
 import { DashboardCallout } from '@/components/DashboardCallout';
 import { InfoBox } from '@/components/InfoBox';
 import { SecurityNote } from '@/components/SecurityNote';
@@ -12,28 +12,34 @@ export default async function ApprovalsPage() {
   const step = getStep('approvals')!;
   const { prev, next } = getAdjacentSteps('approvals');
 
-  const approveCurl = `curl -X POST 'https://api.atlar.com/payments/v2beta/credit-transfers/PAYMENT_ID/approve' \\
+  const approveCurl = `curl -X POST 'https://api.atlar.com/payments/v2/credit-transfers/{{paymentId}}:approve' \\
   -H 'Authorization: Bearer ACCESS_TOKEN' \\
-  -H 'Content-Type: application/json'`;
+  -H 'Content-Type: application/json' \\
+  -d '{ "approvalStepId": "{{approvalStepId}}" }'`;
 
-  const approvePython = `payment_id = "422a164c-4548-11ed-8d31-0a58a9feac02"
+  const approvePython = `payment_id = "{{paymentId}}"
+approval_step_id = "{{approvalStepId}}"
 
-APPROVE_URL = f"https://api.atlar.com/payments/v2beta/credit-transfers/{payment_id}/approve"
+APPROVE_URL = f"https://api.atlar.com/payments/v2/credit-transfers/{payment_id}:approve"
 
-resp = session.post(APPROVE_URL)
+resp = session.post(APPROVE_URL, json={"approvalStepId": approval_step_id})
 
 if resp.ok:
     print(f"Payment approved! Status: {resp.json()['status']}")
 else:
     print(f"Error: {resp.status_code} — {resp.text}")`;
 
-  const rejectCurl = `curl -X POST 'https://api.atlar.com/payments/v2beta/credit-transfers/PAYMENT_ID/reject' \\
+  const rejectCurl = `curl -X POST 'https://api.atlar.com/payments/v2/credit-transfers/{{paymentId}}:reject' \\
   -H 'Authorization: Bearer ACCESS_TOKEN' \\
-  -H 'Content-Type: application/json'`;
+  -H 'Content-Type: application/json' \\
+  -d '{ "approvalStepId": "{{approvalStepId}}" }'`;
 
-  const rejectPython = `REJECT_URL = f"https://api.atlar.com/payments/v2beta/credit-transfers/{payment_id}/reject"
+  const rejectPython = `payment_id = "{{paymentId}}"
+approval_step_id = "{{approvalStepId}}"
 
-resp = session.post(REJECT_URL)
+REJECT_URL = f"https://api.atlar.com/payments/v2/credit-transfers/{payment_id}:reject"
+
+resp = session.post(REJECT_URL, json={"approvalStepId": approval_step_id})
 print(f"Payment rejected. Status: {resp.json()['status']}")`;
 
   const approveTabs: CodeTab[] = [
@@ -77,7 +83,7 @@ print(f"Payment rejected. Status: {resp.json()['status']}")`;
               { status: 'CREATED', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
               { status: 'APPROVED', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
               { status: 'SENT_TO_BANK', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-              { status: 'RECONCILED', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+              { status: 'EXECUTED', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
             ].map((s, i) => (
               <div key={s.status} className="flex items-center gap-2">
                 {i > 0 && <span className="text-[var(--color-text-tertiary)]">→</span>}
@@ -93,37 +99,36 @@ print(f"Payment rejected. Status: {resp.json()['status']}")`;
         </div>
       </section>
 
-      <section className="mt-8">
-        <h2 className="mb-4 text-2xl font-bold">Approve a payment via API</h2>
+      <ApprovalForm approveTabs={approveTabs} rejectTabs={rejectTabs} />
 
-        <ApiCall
-          method="POST"
-          path="/payments/v2beta/credit-transfers/{id}/approve"
-          description="Approve a pending credit transfer. The approving user must have the required role on the approval step."
-        >
-          <CodeBlock tabs={approveTabs} />
-        </ApiCall>
+      <InfoBox variant="warning" title="403 when approving? That's expected with default settings">
+        <p>
+          By default, only the <strong>organization owner</strong> (a human user) can approve
+          payments. Programmatic access users do not have the owner role, so calling the
+          approve endpoint will return a <code>403</code> with{' '}
+          <em>&quot;required approver roles didn&apos;t match user role&quot;</em>.
+        </p>
+        <p className="mt-2">
+          To approve via the API, either{' '}
+          <a href="#configuring-approval-chains" className="font-medium underline underline-offset-2">
+            configure an approval chain
+          </a>{' '}
+          (see below) that allows your programmatic user&apos;s role to approve, or approve
+          manually from the{' '}
+          <a href="https://app.atlar.com/approvals/credit-transfers" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">
+            Dashboard &rarr; Approvals
+          </a>.
+          Rejecting a payment does not require the approver role.
+        </p>
+      </InfoBox>
 
-        <DashboardCallout
-          path="/approvals/credit-transfers"
-          title="Dashboard: Approvals"
-          description="The Approvals page shows all payments pending your approval. Click 'Approve' or 'Reject' directly from the list or detail view."
-        />
-      </section>
+      <DashboardCallout
+        path="/approvals/credit-transfers"
+        title="Dashboard: Approvals"
+        description="The Approvals page shows all payments pending your approval. Click 'Approve' or 'Reject' directly from the list or detail view."
+      />
 
-      <section className="mt-12">
-        <h2 className="mb-4 text-2xl font-bold">Reject a payment</h2>
-
-        <ApiCall
-          method="POST"
-          path="/payments/v2beta/credit-transfers/{id}/reject"
-          description="Reject a pending credit transfer."
-        >
-          <CodeBlock tabs={rejectTabs} />
-        </ApiCall>
-      </section>
-
-      <section className="mt-12">
+      <section id="configuring-approval-chains" className="mt-12">
         <h2 className="mb-4 text-2xl font-bold">Configuring approval chains</h2>
         <p className="mb-4 text-[var(--color-text-secondary)]">
           Approval chains let you define rules for when payments need approval and who

@@ -5,6 +5,7 @@ import { StepNavigation } from '@/components/StepNavigation';
 import { CodeBlock, type CodeTab } from '@/components/CodeBlock';
 import { ApiCall } from '@/components/ApiCall';
 import { DashboardCallout } from '@/components/DashboardCallout';
+import { FinishGuide } from '@/components/FinishGuide';
 import { InfoBox } from '@/components/InfoBox';
 
 export default async function BeyondPage() {
@@ -304,6 +305,10 @@ all_txns = paginate_all(
             </a>
           ))}
         </div>
+      </section>
+
+      <section className="mt-16">
+        <FinishGuide />
       </section>
 
       <StepNavigation prev={prev} next={next} />
