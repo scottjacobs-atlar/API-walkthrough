@@ -24,7 +24,7 @@ export default function SandboxSetupPage() {
         </p>
         <p className="mb-4 text-[var(--color-text-secondary)]">
           For this guide, keep your organization free from live data by
-          only connecting the Atlar Testbanks &mdash; never real bank credentials.
+          only connecting the Atlar Testbanks - never real bank credentials.
         </p>
 
         <DashboardCallout

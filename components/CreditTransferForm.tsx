@@ -107,6 +107,9 @@ export function CreditTransferForm({ tabs }: Props) {
       <RunableCode
         tabs={tabs}
         authMode="bearer"
+        highlightResponseFields={[
+          { pattern: '"id":', label: 'saved for next step' },
+        ]}
         apiCall={{
           method: 'POST',
           path: '/payments/v2/credit-transfers',
