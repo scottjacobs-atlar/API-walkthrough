@@ -38,6 +38,7 @@ type Props = {
     label: string;
   };
   successMessage?: string;
+  highlightResponseFields?: { pattern: string; label: string }[];
 };
 
 function getInitialValues(parameters: ParamField[]): Record<string, string> {
@@ -48,7 +49,7 @@ function getInitialValues(parameters: ParamField[]): Record<string, string> {
   return out;
 }
 
-export function RunableCode({ tabs, filename, apiCall, parameters = [], authMode = 'basic', externalParams, onResult, renderResult, successLink, successMessage }: Props) {
+export function RunableCode({ tabs, filename, apiCall, parameters = [], authMode = 'basic', externalParams, onResult, renderResult, successLink, successMessage, highlightResponseFields }: Props) {
   const { credentials, isSet, token } = useCredentials();
   const [paramValues, setParamValues] = useState<Record<string, string>>(
     () => getInitialValues(parameters),
@@ -353,7 +354,22 @@ export function RunableCode({ tabs, filename, apiCall, parameters = [], authMode
                 </span>
               </div>
               <pre className="overflow-x-auto p-4 text-[13px] leading-relaxed text-[var(--color-text-secondary)]">
-                <code>{typeof result.body === 'string' ? result.body : JSON.stringify(result.body, null, 2)}</code>
+                <code>{(() => {
+                  const json = typeof result.body === 'string' ? result.body : JSON.stringify(result.body, null, 2);
+                  const isSuccess = result.status >= 200 && result.status < 300;
+                  if (!highlightResponseFields || !isSuccess) return json;
+                  return json.split('\n').map((line, i) => {
+                    const match = highlightResponseFields.find((f) => line.includes(f.pattern));
+                    if (!match) return <span key={i}>{line}{'\n'}</span>;
+                    return (
+                      <span key={i} className="-mx-4 inline-flex w-[calc(100%+2rem)] items-baseline bg-amber-100/60 px-4 dark:bg-amber-900/20">
+                        {line}
+                        <span className="ml-3 shrink-0 text-[11px] font-medium text-amber-600 dark:text-amber-400">&larr; {match.label}</span>
+                        {'\n'}
+                      </span>
+                    );
+                  });
+                })()}</code>
               </pre>
             </div>
           )}

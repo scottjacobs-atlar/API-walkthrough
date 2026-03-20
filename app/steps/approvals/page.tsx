@@ -99,8 +99,6 @@ print(f"Payment rejected. Status: {resp.json()['status']}")`;
         </div>
       </section>
 
-      <ApprovalForm approveTabs={approveTabs} rejectTabs={rejectTabs} />
-
       <InfoBox variant="warning" title="403 when approving? That's expected with default settings">
         <p>
           By default, only the <strong>organization owner</strong> (a human user) can approve
@@ -121,6 +119,8 @@ print(f"Payment rejected. Status: {resp.json()['status']}")`;
           Rejecting a payment does not require the approver role.
         </p>
       </InfoBox>
+
+      <ApprovalForm approveTabs={approveTabs} rejectTabs={rejectTabs} />
 
       <DashboardCallout
         path="/approvals/credit-transfers"
