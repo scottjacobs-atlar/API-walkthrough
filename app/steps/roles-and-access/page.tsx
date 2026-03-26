@@ -77,8 +77,15 @@ print(resp.json())`;
           Navigate to <strong>User Management &gt; Roles</strong> in the Dashboard and create a
           new role. For this getting-started guide, grant full access to:
         </p>
+        <InfoBox variant="warning" title="Switch to Advanced setup">
+          <p>
+            When editing a role, click <strong>&ldquo;Switch to Advanced setup&rdquo;</strong> at
+            the top of the role editor. Some of the roles listed below are only visible in
+            Advanced mode.
+          </p>
+        </InfoBox>
         <ul className="mb-6 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
-          {['Accounts', 'Account Balances', 'Counterparties', 'Entities', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates', 'Testbank Transactions', 'Transactions', 'Webhooks'].map((scope) => (
+          {['Account Balances', 'Accounts', 'Counterparties', 'Credit Transfers', 'Direct Debits', 'Entities', 'External Accounts', 'Mandates', 'Testbank Transactions', 'Transactions', 'Webhooks'].map((scope) => (
             <li key={scope} className="flex items-center gap-2">
               <span className="text-emerald-500">✓</span> {scope}
             </li>
