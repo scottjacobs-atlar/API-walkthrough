@@ -115,8 +115,8 @@ print(f"External Account ID: {external_account_id}")`;
         <h2 className="mb-4 text-2xl font-bold">Create a Counterparty</h2>
         <p className="mb-4 text-[var(--color-text-secondary)]">
           The request below creates a counterparty with a single external account.
-          Save the returned <code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs">accounts[0].id</code> &mdash;
-          you will use it as the payment destination in the next step.
+          The returned external account ID (<code className="rounded bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 text-xs">accounts[0].id</code>)
+          is automatically saved and will be used as the payment destination in the next step.
         </p>
 
         <ApiCall

@@ -74,11 +74,18 @@ print(resp.json())`;
 
         <h3 className="mb-3 mt-8 text-lg font-semibold">1. Create a Role</h3>
         <p className="mb-4 text-[var(--color-text-secondary)]">
-          Navigate to <strong>Settings &gt; Roles</strong> in the Dashboard and create a
+          Navigate to <strong>User Management &gt; Roles</strong> in the Dashboard and create a
           new role. For this getting-started guide, grant full access to:
         </p>
+        <InfoBox variant="warning" title="Switch to Advanced setup">
+          <p>
+            When editing a role, click <strong>&ldquo;Switch to Advanced setup&rdquo;</strong> at
+            the top of the role editor. Some of the roles listed below are only visible in
+            Advanced mode.
+          </p>
+        </InfoBox>
         <ul className="mb-6 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
-          {['Accounts', 'Account Balances', 'Counterparties', 'Entities', 'External Accounts', 'Credit Transfers', 'Direct Debits', 'Mandates', 'Testbank Transactions', 'Transactions', 'Webhooks'].map((scope) => (
+          {['Account Balances', 'Accounts', 'Counterparties', 'Credit Transfers', 'Direct Debits', 'Entities', 'External Accounts', 'Mandates', 'Testbank Transactions', 'Transactions', 'Webhooks'].map((scope) => (
             <li key={scope} className="flex items-center gap-2">
               <span className="text-emerald-500">✓</span> {scope}
             </li>
@@ -88,14 +95,14 @@ print(resp.json())`;
         <DashboardCallout
           path="/roles"
           title="Dashboard: Roles"
-          description="Create and manage roles under Settings > Roles. Each role specifies the scope of features and functionality a user can access."
+          description="Create and manage roles under User Management > Roles. Each role specifies the scope of features and functionality a user can access."
         />
       </section>
 
       <section className="mt-12">
         <h3 className="mb-3 text-lg font-semibold">2. Create a Programmatic Access user</h3>
         <p className="mb-4 text-[var(--color-text-secondary)]">
-          With your role created, go to <strong>Settings &gt; Users</strong> and create a
+          With your role created, go to <strong>User Management &gt; Users</strong> and create a
           new <strong>Programmatic Access</strong> user. Assign the role you just created.
         </p>
         <p className="mb-4 text-[var(--color-text-secondary)]">
@@ -185,7 +192,7 @@ print(resp.json())`;
             },
             {
               key: 'amount',
-              label: 'Amount (minor units)',
+              label: 'Amount (e.g. 1500 for EUR 15.00)',
               defaultValue: '1500',
               type: 'number',
               half: true,
@@ -231,6 +238,19 @@ print(resp.json())`;
             your account&apos;s transaction list.
           </p>
         </InfoBox>
+
+        <div className="my-6 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+          <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-4 py-2">
+            <p className="text-xs font-medium text-[var(--color-text-secondary)]">
+              Dashboard: Bank accounts &mdash; look for the <strong>Refresh Pending</strong> and <strong>Refresh Booked</strong> buttons in the top-right of the table
+            </p>
+          </div>
+          <img
+            src="/images/dashboard-refresh-buttons.png"
+            alt="Atlar Dashboard showing the Refresh Pending and Refresh Booked buttons above the bank accounts table"
+            className="w-full"
+          />
+        </div>
       </section>
 
       <StepNavigation prev={prev} next={next} />
